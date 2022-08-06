@@ -1,81 +1,77 @@
-import type { NextPage } from 'next'
 import Head from 'next/head'
-import Image from 'next/image'
 import Web3Modal from "web3modal";
 import { providers, Contract, ethers } from 'ethers';
 import { useEffect, useRef, useState } from "react";
 
-const Home: NextPage = () => {
-  const [haveMetamask, setHaveMetamask] = useState(true)
-  const [accountAddress, setAccountAddress] = useState('');
-  const [accountBalance, setAccountBalance] = useState('');
-  const [walletConnected, setWalletConnected] = useState(false)
-  
-  const { ethereum } = window;
-  const provider = new ethers.providers.Web3Provider(window.ethereum);
-
-  useEffect(()=>{
-    const checkMetamask = async()=>{
-      if(!ethereum) {
-        setHaveMetamask(false)
-      }
-      setHaveMetamask(true)
+const Home = () => {
+  const [currentAccount, setCurrentAccount] = useState('')
+  async function checkIfWalletIsConnected(){
+    const {ethereum} = window
+    if(ethereum){
+      console.log('Ethereum', ethereum)
+    } else {
+      console.log('No wallet found')
     }
-    checkMetamask() }, [])
-  
-    const connectWallet = async () => {
-      try {
+
+    const accounts = await ethereum.request({method: 'eth_accounts'})
+
+    if(accounts.length !== 0){
+      console.log('Found Accounts: ', accounts[0])
+      setCurrentAccount(accounts[0])
+
+    } else {
+      console.log('No Authorized account found')
+    }
+  }
+
+  async function connectWallet(){
+    try{
+        const { ethereum } = window
+
         if (!ethereum) {
-          setHaveMetamask(false);
+          console.log('Metamask not detected')
+          return
         }
-        const accounts = await ethereum.request({
-          method: 'eth_requestAccounts',
-        });
-        let balance = await provider.getBalance(accounts[0]);
-        let bal = ethers.utils.formatEther(balance);
-        setAccountAddress(accounts[0]);
-        setAccountBalance(bal);
-        setWalletConnected(true);
-      } catch (error) {
-        setWalletConnected(false);
-      }
-    };
+        let chainId = await ethereum.request({ method: 'eth_chainId'})
+        console.log('Connected to chain:' + chainId)
+
+        const LuksoChainId = '0x16'
+
+        if (chainId !== LuksoChainId) {
+          alert('You are not connected to the Lukso Testnet!')
+          return
+        }
+
+        const accounts = await ethereum.request({ method: 'eth_requestAccounts' })
+
+        console.log('Found account', accounts[0])
+        setCurrentAccount(accounts[0])
+		} catch (error) {
+			  console.log('Error connecting to metamask', error)
+		}
+  }
+
+  useEffect(() => {
+		checkIfWalletIsConnected()
+	}, [])
+
   return (
-    <div className="App">
-      <header className="App-header">
-        {haveMetamask ? (
-          <div className="App-header">
-            {walletConnected ? (
-              <div className="card">
-                <div className="card-row">
-                  <h3>Wallet Address:</h3>
-                  <p>
-                    {accountAddress.slice(0, 4)}...
-                    {accountAddress.slice(38, 42)}
-                  </p>
-                </div>
-                <div className="card-row">
-                  <h3>Wallet Balance:</h3>
-                  <p>{accountBalance}</p>
-                </div>
-              </div>
-            ) : (
-              <img src={logo} className="App-logo" alt="logo" />
-            )}
-            {walletConnected ? (
-              <p className="info">🎉 Connected Successfully</p>
-            ) : (
-              <button className="btn" onClick={connectWallet}>
-                Connect
-              </button>
-            )}
-          </div>
-        ) : (
-          <p>Please Install MataMask</p>
-        )}
-      </header>
-    </div>
-  );
+		<div className='flex flex-col items-center pt-32 bg-[#f3f6f4] text-[#6a50aa] min-h-screen'>
+			<div className='trasition hover:rotate-180 hover:scale-105 transition duration-500 ease-in-out'>
+			</div>
+			<h2 className='text-3xl font-bold mb-20 mt-12'>
+				Build UP
+			</h2>
+			{currentAccount === '' ? (
+				<button
+				className='text-2xl font-bold py-3 px-12 bg-[#f1c232] rounded-lg mb-10 hover:scale-105 transition duration-500 ease-in-out'
+				onClick={connectWallet}
+				>
+				Connect Wallet
+				</button>
+				) : null}
+		</div>
+	)
 }
 
 
